@@ -2,7 +2,7 @@
 
 const express = require("express");
 const bodyParser = require("body-parser");
-const date = require(__dirname + "/date.js");
+//const date = require(__dirname + "/date.js");
 const mongoose= require("mongoose")
 const app = express();
 
@@ -32,11 +32,16 @@ const item3 = new Item({
 
 const defaultItems =[item1, item2, item3]
 
+const listSchema = {
+  name : "String",
+  items : [itemSchema]
+}
 
+const List = mongoose.model("list", listSchema)
 
 app.get("/", function(req, res) {
 
-const day = date.getDate();
+//const day = date.getDate();
 
 Item.find(function(err, storedItems){
 
@@ -50,7 +55,7 @@ Item.find(function(err, storedItems){
 }) 
 res.redirect("/");
   }else{
-  res.render("list", {listTitle: day, newListItems: storedItems});
+  res.render("list", {listTitle: "Today", newListItems: storedItems});
   }
 })
 });
@@ -58,14 +63,26 @@ res.redirect("/");
 app.post("/", function(req, res){
 
   const item = req.body.newItem;
-
+  const listName= req.body.list;
   const newData=new Item({
     name: item
   })
 
+  //const day = date.getDate();
+  console.log(listName);
+  if(listName === 'Today'){
+    console.log("1");
   newData.save();
-  res.redirect("/")
+  res.redirect("/")}
+  // }else{
+  //   List.findOne({name: listName}, function(err, foundItem){
+  //     foundItem.items.push(newData)
+  //     foundItem.save()
+  //     res.redirect("/" + listName)
+  //   })
+  // }
 
+  //res.redirect("/")
 });
 
 
@@ -79,8 +96,29 @@ app.post("/remove", function(req, res){
     res.redirect("/")
   })
 })
-app.get("/posts/:newPage", function(req,res){
-  console.log(req.params.newPage);
+app.get("/:customPage", function(req,res){
+  const customListName = req.params.customPage;
+
+  List.findOne({name : customListName}, function(err, foundItem){
+    if(!err){
+      if(!foundItem){
+        const list = new List({
+          name : customListName,
+          items: defaultItems
+        })
+      
+       
+        list.save()
+
+        res.redirect("/" + customListName)
+      }else{
+         res.render("list", {listTitle: foundItem.name, newListItems: foundItem.items})
+      }
+    }
+  })
+
+  
+  
 });
 
 app.get("/about", function(req, res){
