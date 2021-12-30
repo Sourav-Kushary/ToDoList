@@ -5,6 +5,7 @@ const bodyParser = require("body-parser");
 //const date = require(__dirname + "/date.js");
 const mongoose= require("mongoose")
 const app = express();
+const _ = require("lodash")
 
 app.set('view engine', 'ejs');
 
@@ -69,35 +70,50 @@ app.post("/", function(req, res){
   })
 
   //const day = date.getDate();
-  console.log(listName);
-  if(listName === 'Today'){
-    console.log("1");
+ 
+  if(listName=='Today'){
+    
   newData.save();
-  res.redirect("/")}
-  // }else{
-  //   List.findOne({name: listName}, function(err, foundItem){
-  //     foundItem.items.push(newData)
-  //     foundItem.save()
-  //     res.redirect("/" + listName)
-  //   })
-  // }
+  res.redirect("/")
 
-  //res.redirect("/")
+   }else{
+      List.findOne({name: listName}, function(err, foundItem){
+      foundItem.items.push(newData)
+      foundItem.save()
+      res.redirect("/" + listName)
+    })
+  }
+
+  
 });
 
 
 app.post("/remove", function(req, res){
-  Item.deleteOne({name:req.body.checkbox}, function(err){
-    if(err){
-      console.log(err);
+
+  listName=req.body.listName;
+
+  if(listName=='Today'){
+    
+    Item.deleteOne({name:req.body.checkbox}, function(err){
+      if(err){
+        console.log(err);
+      }else{
+        console.log("Deleted successfully");
+      }
+      res.redirect("/")
+    })
+  
     }else{
-      console.log("Deleted successfully");
-    }
-    res.redirect("/")
-  })
+      List.findOneAndUpdate({name:listName}, {$pull: {items : {name:req.body.checkbox}}}, function(err, result){
+        if(!err){
+         
+        res.redirect("/"+ listName)
+      }
+    })
+  } 
 })
 app.get("/:customPage", function(req,res){
-  const customListName = req.params.customPage;
+  const customListName = _.capitalize(req.params.customPage);
 
   List.findOne({name : customListName}, function(err, foundItem){
     if(!err){
